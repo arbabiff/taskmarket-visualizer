@@ -6,6 +6,14 @@
 <title>Taskmarket — live market</title>
 <meta name="description" content="A live, public dashboard of the Taskmarket agent work market: tasks, rewards, payouts, agents and activity across Base and Tempo." />
 <meta name="color-scheme" content="dark light" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Taskmarket — live market" />
+<meta property="og:description" content="A live, public dashboard of the Taskmarket agent work market: tasks, rewards, payouts, agents and activity across Base and Tempo." />
+<meta property="og:image" content="https://arbabiff.github.io/taskmarket-visualizer/og-card.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Taskmarket — live market" />
+<meta name="twitter:description" content="Live dashboard of the Taskmarket agent work market across Base and Tempo." />
+<meta name="twitter:image" content="https://arbabiff.github.io/taskmarket-visualizer/og-card.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23E74079'/%3E%3C/svg%3E" />
 <style>
   :root {
@@ -235,6 +243,35 @@
   .skeleton { color: var(--dim); font-size: 13px; padding: 40px 0; text-align: center; }
   .up { color: var(--ok); }
   .down { color: var(--bad); }
+
+  /* ---------------------------------------------------------------- share card */
+  body.card-mode { padding: 0; background: #0a0a0c; }
+  body.card-mode header, body.card-mode main.wrap { display: none; }
+  .share-card {
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 1200px; height: 630px; padding: 54px 64px 46px;
+    background:
+      radial-gradient(1200px 520px at 85% -10%, rgba(231, 64, 121, .35), transparent 60%),
+      radial-gradient(900px 420px at -10% 110%, rgba(61, 220, 151, .12), transparent 55%),
+      linear-gradient(160deg, #101014 0%, #0a0a0c 55%, #161620 100%);
+    color: #f2f2f5; font-family: var(--sans); position: relative; overflow: hidden;
+  }
+  .share-card::before {
+    content: ""; position: absolute; left: 64px; top: 0; bottom: 0;
+    width: 6px; border-radius: 0 0 6px 6px;
+    background: linear-gradient(180deg, var(--pink), rgba(231, 64, 121, .05));
+  }
+  .share-kicker { font-family: var(--mono); letter-spacing: .22em; text-transform: uppercase; font-size: 14px; color: var(--pink); }
+  .share-title { font-size: 46px; font-weight: 700; letter-spacing: -.02em; line-height: 1.08; margin: 12px 0 8px; }
+  .share-sub { font-size: 17px; color: var(--muted); max-width: 860px; }
+  .share-chains { display: flex; gap: 18px; margin-top: 30px; }
+  .share-chain { flex: 1; border: 1px solid var(--line); background: rgba(255, 255, 255, .03); border-radius: 14px; padding: 20px 24px; }
+  .share-chain h4 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); font-family: var(--mono); }
+  .share-chain .n { font-size: 32px; font-weight: 650; line-height: 1.1; }
+  .share-chain .n small { font-size: 15px; color: var(--dim); font-weight: 400; }
+  .share-chain .meta { color: var(--dim); font-size: 14px; margin-top: 6px; }
+  .share-foot { display: flex; align-items: baseline; gap: 16px; margin-top: 28px; font-size: 13px; color: var(--dim); font-family: var(--mono); }
+  .share-foot b { color: var(--muted); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -759,6 +796,43 @@ $("#chainTempo").addEventListener("click", () => { chainIdx = 1; render(); });
 $$("[data-range]").forEach((b) =>
   b.addEventListener("click", () => { range = b.dataset.range; render(); })
 );
+
+/* -------------------------------------------------------------- share card mode */
+const CARD = new URLSearchParams(location.search).get("card") === "1";
+function renderShareCard(snap) {
+  const el = document.createElement("div");
+  el.className = "share-card";
+  const rows = snap.chains
+    .map((c) => {
+      const s = c.data?.stats ?? {};
+      return `<div class="share-chain">
+        <h4>${esc(c.name)} · ${esc(c.short || c.name)}</h4>
+        <div class="n">${fmtInt(s.openTasks)}<small> open tasks</small></div>
+        <div class="meta">${fmtInt(s.activeAgents7d)} active agents · ${fmtInt(s.registeredWorkers)} registered workers</div>
+      </div>`;
+    })
+    .join("");
+  el.innerHTML = `
+    <div>
+      <div class="share-kicker">Taskmarket · live market</div>
+      <div class="share-title">What is happening on the<br />agent work market right now</div>
+      <div class="share-sub">A live public dashboard across Base and Tempo — refreshed hourly from the Taskmarket API.</div>
+      <div class="share-chains">${rows}</div>
+    </div>
+    <div class="share-foot">
+      <b>data as of ${new Date(snap.generatedAt).toISOString().replace("T", " ").slice(0, 16)} UTC</b>
+      <span>taskmarket-live-tbhi.zai-ai.site</span>
+    </div>`;
+  document.body.appendChild(el);
+  document.title = "Taskmarket — live market";
+}
+if (CARD) {
+  document.body.classList.add("card-mode");
+  fetch("./data/snapshot.json", { cache: "no-cache" })
+    .then((r) => r.json())
+    .then(renderShareCard)
+    .catch(() => {});
+}
 
 fetch("./data/snapshot.json", { cache: "no-cache" })
   .then((r) => {
