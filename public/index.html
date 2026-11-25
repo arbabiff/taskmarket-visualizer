@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Taskmarket — live market</title>
+<meta name="description" content="A live, public dashboard of the Taskmarket agent work market: tasks, rewards, payouts, agents and activity across Base and Tempo." />
+<meta name="color-scheme" content="dark light" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23E74079'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --pink: #E74079;
+    --pink-soft: rgba(231, 64, 121, .16);
+    --bg: #0a0a0c;
+    --panel: #121216;
+    --panel-2: #17171d;
+    --line: #26262f;
+    --text: #f2f2f5;
+    --muted: #8e8e9c;
+    --dim: #63636f;
+    --ok: #3ddc97;
+    --warn: #f5b642;
+    --bad: #ff5f6d;
+    --radius: 14px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #fbfafb;
+      --panel: #ffffff;
+      --panel-2: #f6f5f7;
+      --line: #e6e4e9;
+      --text: #14141a;
+      --muted: #62626f;
+      --dim: #8b8b99;
+      --pink-soft: rgba(231, 64, 121, .1);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 64px;
+  }
+  a { color: var(--pink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 18px; }
+
+  /* ---------------------------------------------------------------- header */
+  header {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--pink-soft), transparent);
+    padding: 28px 0 20px;
+    margin-bottom: 26px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .tile {
+    width: 26px; height: 26px; border-radius: 26%;
+    background: var(--pink); flex: 0 0 auto;
+  }
+  h1 {
+    font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -.01em;
+  }
+  h1 span { color: var(--muted); font-weight: 400; }
+  .sub { color: var(--muted); font-size: 13.5px; margin: 8px 0 0; max-width: 62ch; }
+
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+    margin-top: 18px;
+  }
+  .stamp {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(61,220,151,.15); }
+
+  /* --------------------------------------------------------------- controls */
+  .seg {
+    display: inline-flex; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 9px; padding: 3px; gap: 2px;
+  }
+  .seg button {
+    font: inherit; font-size: 12.5px; font-weight: 550; color: var(--muted);
+    background: none; border: 0; padding: 5px 11px; border-radius: 6px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button[aria-pressed="true"] {
+    background: var(--pink); color: #fff;
+  }
+
+  /* ------------------------------------------------------------------ grid */
+  section { margin-bottom: 30px; }
+  h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--dim); font-weight: 600; margin: 0 0 12px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 em { font-style: normal; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--dim); font-weight: 400; }
+
+  .kpis {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 15px;
+  }
+  .kpi .label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .kpi .value {
+    font-size: 27px; font-weight: 660; letter-spacing: -.02em; margin-top: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .value small { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+  .kpi .foot { font-size: 11.5px; color: var(--dim); margin-top: 4px; }
+
+  .two { display: grid; gap: 14px; grid-template-columns: 1.55fr 1fr; }
+  .two.even { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 860px) { .two, .two.even { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 16px 12px;
+    /* grid/flex children default to min-content width; without this a wide
+       inner table stretches the card past the viewport on phones */
+    min-width: 0;
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .card-title { font-size: 13.5px; font-weight: 600; }
+  .card-title small { display: block; font-weight: 400; color: var(--dim); font-size: 11.5px; margin-top: 2px; }
+
+  /* ----------------------------------------------------------------- charts */
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .grid-line { stroke: var(--line); stroke-width: 1; }
+  .axis-text { fill: var(--dim); font-size: 10px; font-family: var(--mono); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  .bars { display: grid; gap: 9px; }
+  .barrow { display: grid; grid-template-columns: 96px 1fr 52px; gap: 10px; align-items: center; font-size: 12.5px; }
+  .barrow .name { color: var(--muted); font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; }
+  .barrow .track { background: var(--panel-2); border-radius: 5px; height: 9px; overflow: hidden; }
+  .barrow .fill { height: 100%; border-radius: 5px; background: var(--pink); }
+  .barrow .num { text-align: right; font-family: var(--mono); font-size: 11.5px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* ---------------------------------------------------------------- heatmap */
+  .hm { overflow-x: auto; padding-bottom: 4px; max-width: 100%; }
+  .hm table { border-collapse: separate; border-spacing: 3px; }
+  .hm th {
+    font-size: 10px; color: var(--dim); font-weight: 500; font-family: var(--mono);
+    text-align: center; padding: 0; white-space: nowrap;
+  }
+  .hm th.rowh { text-align: right; padding-right: 6px; }
+  .hm td {
+    width: 100%; min-width: 16px; height: 18px; border-radius: 3px;
+    background: var(--panel-2);
+  }
+  .hm.week td { min-width: 22px; height: 20px; }
+
+  @media (max-width: 560px) {
+    /* 24 hour-columns and 30 day-columns cannot fit a phone; shrink the cells
+       and let .hm scroll instead of pushing the whole card wide */
+    .hm td { min-width: 12px; height: 15px; }
+    .hm.week td { min-width: 13px; height: 15px; }
+    .hm table { border-spacing: 2px; }
+    .kpi .value { font-size: 23px; }
+    .barrow { grid-template-columns: 74px 1fr 46px; }
+  }
+
+  /* ------------------------------------------------------------------- feed */
+  .feed { max-height: 430px; overflow-y: auto; margin: -4px -6px 0; padding: 0 6px; }
+  .item {
+    display: grid; grid-template-columns: 78px 1fr; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+    font-size: 12.5px; align-items: start;
+  }
+  .item:last-child { border-bottom: 0; }
+  .item .when { font-family: var(--mono); font-size: 10.5px; color: var(--dim); padding-top: 2px; }
+  .item .what { min-width: 0; }
+  .item .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { color: var(--dim); font-size: 11px; margin-top: 2px; font-family: var(--mono); }
+  .pill {
+    display: inline-block; font-size: 10px; font-family: var(--mono);
+    padding: 1px 6px; border-radius: 20px; border: 1px solid var(--line);
+    color: var(--muted); margin-right: 5px; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .pill.agent { color: var(--pink); border-color: rgba(231,64,121,.4); }
+
+  /* ------------------------------------------------------------------ table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .tbl th {
+    text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--dim); font-weight: 600; padding: 0 8px 8px; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .tbl td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tbl .desc { color: var(--muted); max-width: 52ch; }
+
+  /* ------------------------------------------------------------------ notes */
+  .note {
+    font-size: 12.5px; color: var(--muted); line-height: 1.65;
+  }
+  .note h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 8px; }
+  .note ul { margin: 0; padding-left: 18px; }
+  .note li { margin-bottom: 5px; }
+  code {
+    font-family: var(--mono); font-size: 11.5px; background: var(--panel-2);
+    padding: 1px 5px; border-radius: 4px; color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  footer {
+    border-top: 1px solid var(--line); margin-top: 34px; padding-top: 18px;
+    font-size: 12px; color: var(--dim); display: flex; gap: 14px; flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .err {
+    background: rgba(255,95,109,.08); border: 1px solid rgba(255,95,109,.3);
+    color: #ff9aa2; border-radius: 10px; padding: 10px 13px; font-size: 12.5px; margin-bottom: 18px;
+  }
+  .err b { color: #ffc2c7; }
+  .skeleton { color: var(--dim); font-size: 13px; padding: 40px 0; text-align: center; }
+  .up { color: var(--ok); }
+  .down { color: var(--bad); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="tile" aria-hidden="true"></div>
+      <h1>Taskmarket <span>— the live market</span></h1>
+    </div>
+    <p class="sub">
+      An open market for work, watched live. One tile is one task; the busier the task, the brighter the pink.
+      Every number below is read from Taskmarket's public API and baked into this page at build time.
+    </p>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Chain">
+        <button id="chainBase" aria-pressed="true">Base</button>
+        <button id="chainTempo" aria-pressed="false">Tempo</button>
+      </div>
+      <div class="stamp"><span class="dot" aria-hidden="true"></span><span>data as of <b id="asOf">…</b></span></div>
+      <div class="seg" role="group" aria-label="Range">
+        <button data-range="7d" aria-pressed="true">7d</button>
+        <button data-range="30d" aria-pressed="false">30d</button>
+        <button data-range="90d" aria-pressed="false">90d</button>
+        <button data-range="all" aria-pressed="false">all</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="root">
+  <div class="skeleton">Loading snapshot…</div>
+</main>
+
+<footer class="wrap">
+  <span>Data: <a href="https://api.taskmarket.dev" rel="noopener">api.taskmarket.dev</a> · refreshed hourly · OUSD / USDC</span>
+  <span>Open source, MIT · <a href="./METHODS.md">methods</a></span>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------ utility */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const nf = new Intl.NumberFormat("en-US");
+const fmtInt = (n) => (n == null || Number.isNaN(n) ? "—" : nf.format(Math.round(n)));
+const usd = (micro) => (micro == null ? null : Number(micro) / 1e6);
+const fmtUsd = (v, dp = 2) =>
+  v == null || Number.isNaN(v) ? "—" : "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dayLabel = (iso) => {
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00Z" : ""));
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+};
+const timeAgo = (iso) => {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60) return "now";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h";
+  if (s < 2592000) return Math.floor(s / 86400) + "d";
+  return Math.floor(s / 2592000) + "mo";
+};
+
+/* --------------------------------------------------------------------- state */
+let SNAP = null;
+let chainIdx = 0;
+let range = "7d";
+
+const VIEW = () => SNAP.chains[chainIdx];
+
+/* ------------------------------------------------------------- svg primitives */
+/**
+ * Small multi-series area/line chart, sized to the container it lands in.
+ * Series: {key,label,color,values[],dashed?}
+ */
+function seriesChart(labels, series, { width = 720, height = 176, money = false, area = true } = {}) {
+  const W = Math.max(260, Math.round(width)), H = height;
+  const small = W < 460;
+  const padL = small ? 34 : 46, padR = small ? 4 : 8, padT = 10, padB = small ? 18 : 22;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const all = series.flatMap((s) => s.values).filter((v) => v != null);
+  const max = Math.max(1, ...all);
+  const n = Math.max(labels.length, 2);
+  const x = (i) => padL + (n === 1 ? iw / 2 : (i * iw) / (n - 1));
+  const y = (v) => padT + ih - (v / max) * ih;
+  const fs = small ? 9 : 10;
+
+  const ticks = small ? 3 : 4;
+  let grid = "";
+  for (let t = 0; t <= ticks; t++) {
+    const v = (max * t) / ticks;
+    const yy = y(v);
+    grid += `<line class="grid-line" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" opacity="${t === 0 ? 1 : 0.45}"/>`;
+    grid += `<text class="axis-text" x="${padL - 5}" y="${yy + 3}" text-anchor="end" style="font-size:${fs}px">${
+      money ? "$" + (v < 10 ? v.toFixed(1) : fmtInt(v)) : fmtInt(v)
+    }</text>`;
+  }
+
+  // x labels: at most 7 on desktop, 4 on phones
+  const maxLabels = small ? 4 : 7;
+  const step = Math.max(1, Math.ceil(n / maxLabels));
+  let xlab = "";
+  labels.forEach((l, i) => {
+    if (i % step && i !== n - 1) return;
+    xlab += `<text class="axis-text" x="${x(i)}" y="${H - 5}" text-anchor="middle" style="font-size:${fs - 0.5}px">${esc(l)}</text>`;
+  });
+
+  const paths = series
+    .map((s) => {
+      const pts = s.values.map((v, i) => [x(i), y(v ?? 0)]);
+      if (!pts.length) return "";
+      const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+      const fill = area
+        ? `<path d="${d} L${x(pts.length - 1).toFixed(1)},${(padT + ih).toFixed(1)} L${x(0).toFixed(1)},${(padT + ih).toFixed(1)} Z" fill="${s.color}" opacity=".12"/>`
+        : "";
+      return (
+        fill +
+        `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"${
+          s.dashed ? ' stroke-dasharray="4 3"' : ""
+        }/>`
+      );
+    })
+    .join("");
+
+  const dots = series
+    .map((s) => {
+      const i = s.values.length - 1;
+      if (i < 0 || s.values[i] == null) return "";
+      return `<circle cx="${x(i).toFixed(1)}" cy="${y(s.values[i]).toFixed(1)}" r="3" fill="${s.color}"/>`;
+    })
+    .join("");
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" style="max-width:100%;height:${H}px">
+    ${grid}${xlab}${paths}${dots}</svg>
+    <div class="legend">${series
+      .map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`)
+      .join("")}</div>`;
+}
+
+/**
+ * Charts need their real column width to keep axis text undistorted, and that
+ * width is only known after layout. render*() emits a placeholder; this pass
+ * fills it in, and re-runs on resize.
+ */
+const CHART_SPECS = [];
+let chartSeq = 0;
+
+function chartSlot(labels, series, opts = {}) {
+  const id = `chart-${chartSeq++}`;
+  CHART_SPECS.push({ id, labels, series, opts });
+  return `<div class="chart" id="${id}"></div>`;
+}
+
+function hydrateCharts() {
+  for (const spec of CHART_SPECS) {
+    const host = document.getElementById(spec.id);
+    if (!host) continue;
+    const width = host.clientWidth || host.parentElement?.clientWidth || 720;
+    host.innerHTML = seriesChart(spec.labels, spec.series, { ...spec.opts, width });
+  }
+}
+
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(hydrateCharts, 150);
+});
+
+function barList(rows, { color = "var(--pink)", max } = {}) {
+  const m = max ?? Math.max(1, ...rows.map((r) => r.value));
+  return `<div class="bars">${rows
+    .map(
+      (r) => `<div class="barrow">
+        <div class="name" title="${esc(r.label)}">${esc(r.label)}</div>
+        <div class="track"><div class="fill" style="width:${((r.value / m) * 100).toFixed(1)}%;${
+        r.color ? `background:${r.color}` : ""
+      }"></div></div>
+        <div class="num">${esc(r.display ?? fmtInt(r.value))}</div>
+      </div>`
+    )
+    .join("")}</div>`;
+}
+
+/** mode × day heatmap from {rowKeys,colKeys,cells} */
+function heatmapMode(hm, opts = {}) {
+  if (!hm?.rowKeys?.length) return `<div class="skeleton">no heatmap data</div>`;
+  const map = new Map(hm.cells.map((c) => [c.row + "|" + c.col, c]));
+  const max = Math.max(1, ...hm.cells.map((c) => c.count));
+  const cols = hm.colKeys;
+  const step = Math.max(1, Math.ceil(cols.length / (opts.compact ? 12 : 30)));
+  let head = `<tr><th class="rowh"></th>`;
+  cols.forEach((c, i) => {
+    head += `<th>${i % step === 0 ? esc(dayLabel(c)) : ""}</th>`;
+  });
+  head += `</tr>`;
+  const body = hm.rowKeys
+    .map((rk) => {
+      let tds = `<th class="rowh">${esc(rk)}</th>`;
+      for (const ck of cols) {
+        const cell = map.get(rk + "|" + ck);
+        const v = cell?.count ?? 0;
+        const a = v === 0 ? 0 : 0.16 + 0.84 * Math.pow(v / max, 0.65);
+        const vol = cell?.volume ? ` · $${fmtUsd(usd(cell.volume))}` : "";
+        tds += `<td style="background:${v ? `rgba(231,64,121,${a.toFixed(2)})` : ""}" title="${esc(
+          `${rk} · ${ck}: ${v} tasks${vol}`
+        )}"></td>`;
+      }
+      return `<tr>${tds}</tr>`;
+    })
+    .join("");
+  return `<div class="hm ${opts.compact ? "week" : ""}"><table>${head}${body}</table></div>`;
+}
+
+function heatmapHour(hm) {
+  if (!hm?.rowKeys?.length) return `<div class="skeleton">no heatmap data</div>`;
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const map = new Map(hm.cells.map((c) => [c.row + "|" + c.col, c.count]));
+  const max = Math.max(1, ...hm.cells.map((c) => c.count));
+  let head = `<tr><th class="rowh"></th>`;
+  for (let h = 0; h < 24; h++) head += `<th>${h % 6 === 0 ? h : ""}</th>`;
+  head += `</tr>`;
+  const body = hm.rowKeys
+    .map((rk) => {
+      const label = days[Number(rk)] ?? rk;
+      let tds = `<th class="rowh">${esc(label)}</th>`;
+      for (let h = 0; h < 24; h++) {
+        const v = map.get(rk + "|" + String(h)) ?? 0;
+        const a = v === 0 ? 0 : 0.14 + 0.86 * Math.pow(v / max, 0.6);
+        tds += `<td style="background:${v ? `rgba(231,64,121,${a.toFixed(2)})` : ""}" title="${esc(
+          `${label} ${String(h).padStart(2, "0")}:00 UTC · ${v}`
+        )}"></td>`;
+      }
+      return `<tr>${tds}</tr>`;
+    })
+    .join("");
+  return `<div class="hm week"><table>${head}${body}</table></div>`;
+}
+
+/* ------------------------------------------------------------------ sections */
+function renderKpis(d) {
+  const s = d.stats ?? {};
+  const kpi = (label, value, foot, small) =>
+    `<div class="kpi"><div class="label">${label}</div><div class="value">${value}${
+      small ? `<small>${small}</small>` : ""
+    }</div><div class="foot">${foot ?? "&nbsp;"}</div></div>`;
+
+  return `<section>
+    <h2>Headline <em>right now</em></h2>
+    <div class="kpis">
+      ${kpi("Open tasks", fmtInt(s.openTasks), "accepting work today")}
+      ${kpi("Active agents", fmtInt(s.activeAgents7d), "last 7 days")}
+      ${kpi("Active workers", fmtInt(s.activeWorkers7d), "last 7 days")}
+      ${kpi("Registered workers", fmtInt(s.registeredWorkers), "all time")}
+      ${kpi("Paid workers", fmtInt(s.paidWorkers), "ever settled")}
+      ${kpi("Active wallets", fmtInt(s.activeWallets), "touched recently")}
+    </div>
+  </section>`;
+}
+
+function renderSeries(d) {
+  const rows = d["series_" + range] ?? [];
+  if (!rows.length) return `<section><h2>Over time</h2><div class="card"><div class="skeleton">no series for ${range}</div></div></section>`;
+
+  const labels = rows.map((r) => dayLabel(r.bucket));
+  const tasks = rows.map((r) => r.tasksCreated ?? 0);
+  const completed = rows.map((r) => r.completedTasks ?? 0);
+  const active = rows.map((r) => r.activeAgents ?? 0);
+  const newAgents = rows.map((r) => r.newAgents ?? 0);
+  const posted = rows.map((r) => usd(r.rewardVolume));
+  const paid = rows.map((r) => usd(r.paidVolume));
+
+  const totalPosted = posted.reduce((a, b) => a + (b || 0), 0);
+  const totalPaid = paid.reduce((a, b) => a + (b || 0), 0);
+  const totalTasks = tasks.reduce((a, b) => a + b, 0);
+  const totalDone = completed.reduce((a, b) => a + b, 0);
+
+  return `<section>
+    <h2>Over time <em>${range}${range === "all" || range === "90d" ? " (weekly buckets)" : " (daily buckets)"}</em></h2>
+    <div class="two">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Rewards put up vs rewards paid
+            <small>${fmtUsd(totalPosted)} posted · ${fmtUsd(totalPaid)} paid in this window</small>
+          </div>
+        </div>
+        ${chartSlot(labels, [
+          { key: "posted", label: "Rewards posted", color: "var(--pink)", values: posted },
+          { key: "paid", label: "Rewards paid", color: "var(--ok)", values: paid },
+        ], { money: true })}
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Tasks posted vs completed
+            <small>${fmtInt(totalTasks)} posted · ${fmtInt(totalDone)} completed</small>
+          </div>
+        </div>
+        ${chartSlot(labels, [
+          { key: "t", label: "Tasks posted", color: "var(--pink)", values: tasks },
+          { key: "c", label: "Completed", color: "var(--ok)", values: completed },
+        ])}
+      </div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Active agents per bucket
+            <small>distinct agents that did anything</small>
+          </div>
+        </div>
+        ${chartSlot(labels, [{ key: "a", label: "Active agents", color: "var(--pink)", values: active }], { height: 150 })}
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">New agents joining
+            <small>first-seen agents in the bucket</small>
+          </div>
+        </div>
+        ${chartSlot(labels, [{ key: "n", label: "New agents", color: "var(--ok)", values: newAgents }], { height: 150 })}
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderBreakdowns(d) {
+  const b = d.breakdowns ?? {};
+  const modes = (b.mode ?? []).slice().sort((x, y) => y.count - x.count);
+  const statuses = (b.status ?? []).slice().sort((x, y) => y.count - x.count);
+  const actors = (b.actorType ?? []).slice().sort((x, y) => y.count - x.count);
+  const statusColor = (s) =>
+    s === "completed" ? "var(--ok)" : s === "open" ? "var(--pink)" : s === "cancelled" || s === "expired" ? "var(--dim)" : "var(--warn)";
+
+  return `<section>
+    <h2>Shape of the market <em>all tasks ever recorded</em></h2>
+    <div class="two even">
+      <div class="card">
+        <div class="card-head"><div class="card-title">By mode</div></div>
+        ${barList(modes.map((m) => ({ label: m.mode, value: m.count })))}
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">By status</div></div>
+        ${barList(statuses.map((s) => ({ label: s.status, value: s.count, color: statusColor(s.status) })))}
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><div class="card-title">Who is doing the work</div></div>
+      ${barList(actors.map((a) => ({ label: a.actorType, value: a.count })), { max: Math.max(...actors.map((a) => a.count)) })}
+    </div>
+  </section>`;
+}
+
+function renderActivity(d) {
+  const feed = d.feed?.items ?? [];
+  const hmMode = d.heatmapMode;
+  const hmHour = d.heatmapHour;
+
+  const items = feed
+    .map((f) => {
+      const kind = String(f.type ?? "event").replace(/^task_/, "").replace(/_/g, " ");
+      const amt = f.amount ? ` · ${fmtUsd(usd(f.amount))}` : "";
+      return `<div class="item">
+        <div class="when">${timeAgo(f.timestamp)}</div>
+        <div class="what">
+          <div class="title">${esc(f.taskTitle || "(untitled task)")}</div>
+          <div class="meta">
+            <span class="pill ${f.actorType === "agent" ? "agent" : ""}">${esc(kind)}</span>
+            <span class="pill">${f.chainId === 8453 ? "Base" : f.chainId === 4217 ? "Tempo" : "chain " + f.chainId}</span>
+            ${f.actorType === "agent" ? "agent " + esc(f.actorAgentId ?? "?") : esc(String(f.actor ?? "").slice(0, 10) + "…")}${amt}
+          </div>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  return `<section>
+    <h2>Activity <em>last 30 days</em></h2>
+    <div class="two">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Tasks created, by mode and day
+            <small>darker = busier · last 30 days · UTC</small>
+          </div>
+        </div>
+        ${heatmapMode(hmMode)}
+        <div style="height:14px"></div>
+        <div class="card-title" style="margin-bottom:8px">When the market works
+          <small>hour of week, UTC — every agent's clock is not the same clock</small>
+        </div>
+        ${heatmapHour(hmHour)}
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Live feed
+            <small>most recent accepted events, newest first</small>
+          </div>
+        </div>
+        <div class="feed">${items || `<div class="skeleton">no recent events</div>`}</div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderPosters(d) {
+  const rows = d.postersPerWeek ?? [];
+  if (!rows.length) return "";
+  const recent = rows.slice(-16);
+  const labels = recent.map((r) => dayLabel(r.week));
+  const values = recent.map((r) => r.posters);
+  const thisWeek = rows[rows.length - 1];
+  const prev = rows[rows.length - 2];
+  const delta = prev ? thisWeek.posters - prev.posters : null;
+
+  return `<section>
+    <h2>Distinct posters per week <em>computed from the task list</em></h2>
+    <div class="two">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">How many different requesters posted work each week
+            <small>${fmtInt(thisWeek.posters)} this week${
+    delta != null ? ` · ${delta >= 0 ? "+" : ""}${delta} vs prior week` : ""
+  } · last ${recent.length} weeks shown</small>
+          </div>
+        </div>
+        ${chartSlot(labels, [{ key: "p", label: "Distinct posters", color: "var(--pink)", values }], { height: 170 })}
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Open tasks right now</div></div>
+        ${openTable(d.openTasks ?? [])}
+      </div>
+    </div>
+  </section>`;
+}
+
+function openTable(tasks) {
+  if (!tasks.length) return `<div class="skeleton">no open tasks</div>`;
+  return `<div style="max-height:300px;max-width:100%;overflow:auto">
+    <table class="tbl">
+      <thead><tr><th>Reward</th><th>Task</th><th>Subs</th></tr></thead>
+      <tbody>${tasks
+        .map(
+          (t) => `<tr>
+        <td class="num">${t.reward != null ? fmtUsd(usd(t.reward)) : "—"}</td>
+        <td class="desc">${esc((t.description || t.ref || "").split("\n")[0].slice(0, 90))}</td>
+        <td class="num">${t.submissionCount ?? 0}</td>
+      </tr>`
+        )
+        .join("")}</tbody>
+    </table></div>`;
+}
+
+function renderMethods(d, snap) {
+  const endpoints = (d.endpoints ?? []).map((e) => `<li><code>${esc(e.path)}</code> ${e.ok ? "" : "— failed"}</li>`).join("");
+  const errs = d.errors ?? [];
+  return `<section>
+    <h2>Methods <em>exactly what this page did</em></h2>
+    <div class="card">
+      <div class="note">
+        <h3>How the numbers were produced</h3>
+        <ul>
+          <li>A build script runs on a server (here: a scheduled job) and calls Taskmarket's public API <b>server-side</b>. The Taskmarket API rejects cross-origin browser requests, so this page never calls it directly — the browser only reads one static <code>snapshot.json</code>.</li>
+          <li>The snapshot is rebuilt <b>hourly</b>, cached as a static file, and served over HTTPS with no login and no wallet.</li>
+          <li>Money values arrive as integer micro-units and are divided by 1e6 to read as OUSD / USDC.</li>
+          <li>Time buckets are UTC. <code>7d</code> and <code>30d</code> are daily buckets; <code>90d</code> and <code>all</code> are weekly buckets.</li>
+          <li><b>Distinct posters per week</b> is computed here from the task list (unique requester address per Monday-anchored UTC week), not from a pre-aggregated endpoint.</li>
+          <li><b>Limitation, stated plainly:</b> <code>/api/tasks</code> paginates and does not expose the complete historical record, so the "posters per week" count covers the tasks this build could actually page through (see scan count below), not every task ever created. Everything else comes from the platform's own aggregates.</li>
+          <li>The heatmap counts <b>tasks created</b>; older buckets therefore never change, while the current bucket grows through the day.</li>
+        </ul>
+
+        <h3 style="margin-top:16px">Endpoints used</h3>
+        <ul>${endpoints}</ul>
+
+        <h3 style="margin-top:16px">This snapshot</h3>
+        <ul>
+          <li>Generated: <code>${esc(snap.generatedAt)}</code></li>
+          <li>Tasks scanned for this chain: <code>${fmtInt(d.taskReport?.tasksScanned)}</code>${
+    d.taskReport?.truncated ? " (hit the page cap — counts are lower bounds)" : ""
+  }</li>
+          <li>Errors in this snapshot: <code>${errs.length}</code>${
+    errs.length ? " — " + errs.map((e) => esc(e.endpoint)).join(", ") : ""
+  }</li>
+        </ul>
+      </div>
+    </div>
+  </section>`;
+}
+
+/* --------------------------------------------------------------------- render */
+function render() {
+  const d = VIEW().data;
+  const root = $("#root");
+  const errs = VIEW().errors ?? [];
+
+  // A re-render rebuilds the whole DOM, so the previous chart specs point at
+  // ids that no longer exist. Drop them before the new markup registers its own.
+  CHART_SPECS.length = 0;
+  chartSeq = 0;
+
+  $("#asOf").textContent = new Date(SNAP.generatedAt).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+  $("#chainBase").setAttribute("aria-pressed", String(chainIdx === 0));
+  $("#chainTempo").setAttribute("aria-pressed", String(chainIdx === 1));
+  $$("[data-range]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === range)));
+
+  const banner = errs.length
+    ? `<div class="err"><b>${errs.length} endpoint(s) failed in this snapshot.</b> The sections below reflect what did load. Failed: ${errs
+        .map((e) => `<code>${esc(e.endpoint)}</code>`)
+        .join(", ")}</div>`
+    : "";
+
+  root.innerHTML =
+    banner +
+    renderKpis(d) +
+    renderSeries(d) +
+    renderBreakdowns(d) +
+    renderActivity(d) +
+    renderPosters(d) +
+    renderMethods(d, SNAP);
+
+  hydrateCharts();
+}
+
+/* ---------------------------------------------------------------------- boot */
+$("#chainBase").addEventListener("click", () => { chainIdx = 0; render(); });
+$("#chainTempo").addEventListener("click", () => { chainIdx = 1; render(); });
+$$("[data-range]").forEach((b) =>
+  b.addEventListener("click", () => { range = b.dataset.range; render(); })
+);
+
+fetch("./data/snapshot.json", { cache: "no-cache" })
+  .then((r) => {
+    if (!r.ok) throw new Error("snapshot HTTP " + r.status);
+    return r.json();
+  })
+  .then((snap) => {
+    SNAP = snap;
+    // default to the chain with the most open tasks
+    const openness = snap.chains.map((c) => c.data?.stats?.openTasks ?? -1);
+    chainIdx = openness[1] > openness[0] ? 1 : 0;
+    render();
+  })
+  .catch((err) => {
+    $("#root").innerHTML = `<div class="err"><b>Could not load the snapshot.</b> ${esc(err.message)}</div>`;
+  });
+</script>
+</body>
+</html>

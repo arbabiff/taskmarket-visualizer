@@ -1,0 +1,17 @@
+{
+  "name": "taskmarket-visualizer",
+  "version": "1.0.0",
+  "description": "A live, public dashboard of Taskmarket's market data (Base + Tempo).",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "refresh": "node scripts/fetch.mjs",
+    "serve": "node scripts/serve.mjs",
+    "dev": "node scripts/fetch.mjs && node scripts/serve.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  }
+}
