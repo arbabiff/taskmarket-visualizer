@@ -1,0 +1,6 @@
+# The Actions workflow and its shell steps run on Linux. Windows checkouts
+# default to CRLF, which breaks shell scripts inside a `run:` block, so pin
+# every text file to LF and never let git convert them.
+* text=auto eol=lf
+*.png binary
+*.ico binary
