@@ -2,7 +2,7 @@ name: Refresh snapshot & publish
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   schedule:
     # Rebuild the data every hour. GitHub may delay scheduled runs under load,
     # so the page always shows its own "data as of" time rather than implying live.
